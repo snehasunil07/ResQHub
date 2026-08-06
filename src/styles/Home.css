@@ -1,0 +1,90 @@
+/* Navbar */
+
+.navbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 60px;
+    background:#0B3D91;
+}
+
+.logo{
+    font-size:50px;
+    font-weight:bold;
+    color:white;
+}
+
+.logo span{
+    margin-left:10px;
+}
+
+.nav-links{
+    display:flex;
+    list-style:none;
+    gap:30px;
+}
+
+.nav-links a{
+    color:white;
+    font-size:18px;
+    font-weight:500;
+    transition:0.3s;
+}
+
+.nav-links a:hover{
+    color:#ff4d4d;
+}
+/* Hero Section */
+
+.hero{
+    text-align:center;
+    padding:80px 20px;
+}
+
+.hero h1{
+    font-size:48px;
+    color:white;
+    margin-bottom:20px;
+}
+
+.hero h2{
+    color:#ff4d4d;
+    font-size:30px;
+    margin-bottom:25px;
+}
+
+.hero p{
+    max-width:750px;
+    margin:auto;
+    font-size:20px;
+    line-height:1.7;
+    color:#dddddd;
+}
+
+.hero-buttons{
+    margin-top:40px;
+}
+
+.hero-buttons button{
+    padding:15px 35px;
+    border:none;
+    border-radius:10px;
+    font-size:18px;
+    margin:10px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.report-btn{
+    background:#e53935;
+    color:white;
+}
+
+.volunteer-btn{
+    background:#0B3D91;
+    color:white;
+}
+
+.hero-buttons button:hover{
+    transform:translateY(-3px);
+}
