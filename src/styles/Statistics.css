@@ -1,51 +1,200 @@
-.statistics{
-    background:#20212b;
-    padding:80px 10%;
-    text-align:center;
+/* =========================================
+   RESQHUB - STATISTICS SECTION
+   ========================================= */
+
+.statistics {
+  padding: 80px 6%;
+  background: #10131a;
+  color: white;
 }
 
-.statistics h2{
-    color:white;
-    font-size:40px;
-    margin-bottom:15px;
+
+/* =========================================
+   HEADER
+   ========================================= */
+
+.statistics-header {
+  text-align: center;
+  margin-bottom: 45px;
 }
 
-.statistics p{
-    color:#c0c0c0;
-    margin-bottom:50px;
-    font-size:18px;
+.statistics-header h2 {
+  margin: 0 0 12px;
+  font-size: 38px;
+  font-weight: 800;
+  color: #ffffff;
 }
 
-.stats-container{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:30px;
+.statistics-header h2 span {
+  color: #ff4d4d;
 }
 
-.stat-card{
-    background:#2d3042;
-    padding:40px 20px;
-    border-radius:15px;
-    transition:0.3s;
-    box-shadow:0 8px 20px rgba(0,0,0,0.3);
+.statistics-header p {
+  margin: 0;
+  color: #b8c0cc;
+  font-size: 17px;
 }
 
-.stat-card:hover{
-    transform:translateY(-8px);
-    background:#214b9b;
+
+/* =========================================
+   STATISTICS BOXES
+   ========================================= */
+
+.statistics-container {
+  max-width: 1000px;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
 }
 
-.stat-card h1{
-    color:#4da6ff;
-    font-size:45px;
-    margin-bottom:10px;
+
+/* =========================================
+   INDIVIDUAL BOX
+   ========================================= */
+
+.stat-card {
+  height: 200px;
+
+  background: #1b202b;
+
+  border: 1px solid #303948;
+  border-radius: 16px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  position: relative;
+  overflow: hidden;
+
+  transition: all 0.3s ease;
 }
 
-.stat-card:hover h1{
-    color:white;
+
+/* Blue top line */
+
+.stat-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 4px;
+
+  background: #0b5ed7;
 }
 
-.stat-card h3{
-    color:white;
-    font-size:22px;
+
+/* Red top line */
+
+.stat-card.red::before {
+  background: #e53935;
+}
+
+
+/* =========================================
+   HOVER EFFECT
+   ========================================= */
+
+.stat-card:hover {
+  transform: translateY(-8px);
+
+  border-color: #0b5ed7;
+
+  box-shadow: 0 12px 30px rgba(11, 94, 215, 0.25);
+}
+
+.stat-card.red:hover {
+  border-color: #e53935;
+
+  box-shadow: 0 12px 30px rgba(229, 57, 53, 0.25);
+}
+
+
+/* =========================================
+   ICON
+   ========================================= */
+
+.stat-icon {
+  font-size: 34px;
+  margin-bottom: 12px;
+}
+
+
+/* =========================================
+   NUMBER
+   ========================================= */
+
+.stat-card h3 {
+  margin: 0;
+
+  font-size: 36px;
+  font-weight: 800;
+
+  color: #ffffff;
+}
+
+
+/* =========================================
+   LABEL
+   ========================================= */
+
+.stat-card p {
+  margin: 8px 0 0;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  color: #b8c0cc;
+}
+
+
+/* =========================================
+   TABLET
+   ========================================= */
+
+@media (max-width: 900px) {
+
+  .statistics-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 600px) {
+
+  .statistics {
+    padding: 60px 20px;
+  }
+
+  .statistics-header h2 {
+    font-size: 30px;
+  }
+
+  .statistics-header p {
+    font-size: 14px;
+  }
+
+  .statistics-container {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .stat-card {
+    height: 180px;
+  }
+
 }

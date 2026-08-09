@@ -1,0 +1,528 @@
+/* =========================================
+   RESQHUB - LOGIN & REGISTER
+   ========================================= */
+
+.auth-page {
+  min-height: calc(100vh - 90px);
+  padding: 70px 20px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background:
+    radial-gradient(
+      circle at 15% 30%,
+      rgba(11, 61, 145, 0.25),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 85% 70%,
+      rgba(229, 57, 53, 0.12),
+      transparent 35%
+    ),
+    #0d1117;
+}
+
+
+/* Main width */
+
+.auth-container {
+  width: 100%;
+  max-width: 460px;
+}
+
+
+/* =========================================
+   CARD
+   ========================================= */
+
+.auth-card {
+  position: relative;
+
+  padding: 42px;
+
+  background: #171c25;
+
+  border: 1px solid #303949;
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.5);
+
+  overflow: hidden;
+
+  animation: cardAppear 0.5s ease;
+}
+
+
+/* Blue top border */
+
+.auth-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 4px;
+
+  background: #0b3d91;
+}
+
+
+/* Red top border for Register */
+
+.register-card::before {
+  background: #e53935;
+}
+
+
+/* =========================================
+   ICON
+   ========================================= */
+
+.auth-icon {
+  width: 70px;
+  height: 70px;
+
+  margin: 0 auto 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: rgba(11, 61, 145, 0.18);
+
+  border: 1px solid rgba(45, 118, 220, 0.4);
+
+  font-size: 30px;
+
+  box-shadow:
+    0 8px 25px rgba(11, 61, 145, 0.15);
+}
+
+
+/* Register icon */
+
+.register-card .auth-icon {
+  background: rgba(229, 57, 53, 0.12);
+
+  border-color: rgba(229, 57, 53, 0.35);
+
+  box-shadow:
+    0 8px 25px rgba(229, 57, 53, 0.12);
+}
+
+
+/* =========================================
+   HEADINGS
+   ========================================= */
+
+.auth-card h1 {
+  margin: 0;
+
+  text-align: center;
+
+  color: #ffffff;
+
+  font-size: 32px;
+
+  font-weight: 750;
+}
+
+
+.auth-subtitle {
+  margin: 10px 0 32px;
+
+  text-align: center;
+
+  color: #9ca6b5;
+
+  font-size: 15px;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================
+   FORM
+   ========================================= */
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+
+.input-group label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #e1e6ee;
+
+  font-size: 14px;
+
+  font-weight: 600;
+}
+
+
+.input-group input {
+  width: 100%;
+
+  padding: 14px 15px;
+
+  background: #0f141c;
+
+  color: #ffffff;
+
+  border: 1px solid #354052;
+
+  border-radius: 9px;
+
+  outline: none;
+
+  font-size: 15px;
+
+  transition: all 0.25s ease;
+}
+
+
+.input-group input::placeholder {
+  color: #697384;
+}
+
+
+.input-group input:hover {
+  border-color: #4a5668;
+}
+
+
+.input-group input:focus {
+  border-color: #1976d2;
+
+  box-shadow:
+    0 0 0 3px rgba(25, 118, 210, 0.14);
+}
+
+
+/* =========================================
+   LOGIN OPTIONS
+   ========================================= */
+
+.form-options {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin: 4px 0 25px;
+
+  font-size: 13px;
+}
+
+
+.remember {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color: #9ca6b5;
+
+  cursor: pointer;
+}
+
+
+.remember input {
+  accent-color: #0b3d91;
+}
+
+
+.forgot {
+  color: #4da3ff;
+
+  text-decoration: none;
+
+  transition: 0.2s;
+}
+
+
+.forgot:hover {
+  color: #ff4d4d;
+}
+
+
+/* =========================================
+   BUTTON
+   ========================================= */
+
+.auth-card .primary-btn {
+  width: 100%;
+
+  display: block;
+
+  padding: 14px 20px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #0b3d91;
+
+  color: #ffffff;
+
+  font-size: 16px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  text-align: center;
+
+  text-decoration: none;
+
+  transition: all 0.3s ease;
+}
+
+
+.auth-card .primary-btn:hover {
+  background: #1559c7;
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 25px rgba(11, 61, 145, 0.35);
+}
+
+
+/* Register button */
+
+.register-card .primary-btn {
+  background: #e53935;
+}
+
+
+.register-card .primary-btn:hover {
+  background: #ff4d4d;
+
+  box-shadow:
+    0 10px 25px rgba(229, 57, 53, 0.3);
+}
+
+
+/* =========================================
+   DIVIDER
+   ========================================= */
+
+.auth-divider {
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+
+  margin: 28px 0;
+
+  color: #687384;
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+
+  height: 1px;
+
+  flex: 1;
+
+  background: #303949;
+}
+
+
+/* =========================================
+   BOTTOM LINK
+   ========================================= */
+
+.auth-bottom {
+  margin: 0;
+
+  text-align: center;
+
+  color: #8e98a8;
+
+  font-size: 14px;
+}
+
+
+.auth-bottom a {
+  color: #4da3ff;
+
+  font-weight: 600;
+
+  text-decoration: none;
+
+  transition: 0.2s;
+}
+
+
+.auth-bottom a:hover {
+  color: #ff4d4d;
+}
+
+
+/* =========================================
+   TERMS
+   ========================================= */
+
+.terms {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 8px;
+
+  margin: 4px 0 22px;
+
+  color: #8e98a8;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+
+  cursor: pointer;
+}
+
+
+.terms input {
+  margin-top: 3px;
+
+  accent-color: #e53935;
+}
+
+
+/* =========================================
+   SUCCESS MESSAGE
+   ========================================= */
+
+.success-message {
+  padding: 10px 0;
+
+  text-align: center;
+}
+
+
+.success-icon {
+  width: 65px;
+  height: 65px;
+
+  margin: 0 auto 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: rgba(25, 118, 210, 0.12);
+
+  border: 1px solid #1976d2;
+
+  color: #4da3ff;
+
+  font-size: 30px;
+
+  font-weight: bold;
+}
+
+
+.success-icon.small {
+  width: 55px;
+  height: 55px;
+
+  font-size: 25px;
+}
+
+
+.success-message h2 {
+  margin: 0 0 10px;
+
+  color: #ffffff;
+
+  font-size: 24px;
+}
+
+
+.success-message p {
+  margin-bottom: 25px;
+
+  color: #9ca6b5;
+
+  line-height: 1.6;
+}
+
+
+/* =========================================
+   ANIMATION
+   ========================================= */
+
+@keyframes cardAppear {
+
+  from {
+    opacity: 0;
+
+    transform: translateY(25px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0);
+  }
+
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 600px) {
+
+  .auth-page {
+    padding: 45px 15px;
+  }
+
+  .auth-card {
+    padding: 32px 22px;
+
+    border-radius: 15px;
+  }
+
+  .auth-card h1 {
+    font-size: 28px;
+  }
+
+  .auth-icon {
+    width: 62px;
+    height: 62px;
+
+    font-size: 27px;
+  }
+
+  .form-options {
+    font-size: 12px;
+  }
+
+}

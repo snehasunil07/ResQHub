@@ -1,0 +1,64 @@
+/* =========================================
+   RESQHUB - FOOTER
+   ========================================= */
+
+footer {
+  padding: 45px 20px 25px;
+
+  background: #0b3d91;
+
+  color: #ffffff;
+
+  text-align: center;
+}
+
+
+/* Contact heading */
+
+footer h2 {
+  margin: 0 0 20px;
+
+  font-size: 25px;
+}
+
+
+/* Contact details */
+
+footer p {
+  margin: 10px 0;
+
+  color: #e2e8f0;
+
+  font-size: 16px;
+}
+
+
+/* Contact icons */
+
+footer p span {
+  margin-right: 8px;
+}
+
+
+/* Divider */
+
+footer hr {
+  max-width: 800px;
+
+  margin: 30px auto 20px;
+
+  border: none;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+
+/* Copyright */
+
+footer .copyright {
+  margin-top: 20px;
+
+  font-size: 14px;
+
+  color: #c5d0df;
+}

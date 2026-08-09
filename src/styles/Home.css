@@ -1,90 +1,548 @@
-/* Navbar */
+/* =========================================
+   RESQHUB - HOME PAGE
+   NAVBAR + HERO
+   ========================================= */
 
-.navbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:20px 60px;
-    background:#0B3D91;
+
+/* =========================================
+   GLOBAL
+   ========================================= */
+
+* {
+  box-sizing: border-box;
 }
 
-.logo{
-    font-size:50px;
-    font-weight:bold;
-    color:white;
+body {
+  margin: 0;
+  padding: 0;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  background: #111318;
+  color: white;
 }
 
-.logo span{
-    margin-left:10px;
+
+/* =========================================
+   NAVBAR
+   ========================================= */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 30px 70px;
+
+  background: rgba(42, 85, 160, 0.96);
+
+  border-bottom: 1px solid #263247;
+
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-.nav-links{
-    display:flex;
-    list-style:none;
-    gap:30px;
+
+/* Logo */
+
+.logo {
+  display: flex;
+  align-items: center;
+
+  color: white;
+
+  font-size: 40px;
+  font-weight: 800;
+
+  cursor: pointer;
 }
 
-.nav-links a{
-    color:white;
-    font-size:18px;
-    font-weight:500;
-    transition:0.3s;
+.logo span {
+  margin-left: 8px;
+
+  color: white;
 }
 
-.nav-links a:hover{
-    color:#ff4d4d;
-}
-/* Hero Section */
 
-.hero{
-    text-align:center;
-    padding:80px 20px;
-}
+/* Navigation */
 
-.hero h1{
-    font-size:48px;
-    color:white;
-    margin-bottom:20px;
-}
+.nav-links {
+  display: flex;
+  align-items: center;
 
-.hero h2{
-    color:#ff4d4d;
-    font-size:30px;
-    margin-bottom:25px;
+  gap: 20px;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
 }
 
-.hero p{
-    max-width:750px;
-    margin:auto;
-    font-size:20px;
-    line-height:1.7;
-    color:#dddddd;
+
+.nav-links a {
+  position: relative;
+
+  color: #d7dce5;
+
+  font-size: 18px;
+  font-weight: 600;
+
+  text-decoration: none;
+
+  transition: 0.3s ease;
 }
 
-.hero-buttons{
-    margin-top:40px;
+
+/* Hover underline */
+
+.nav-links a::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: -7px;
+
+  width: 0;
+  height: 2px;
+
+  background: #e53935;
+
+  transition: width 0.3s ease;
 }
 
-.hero-buttons button{
-    padding:15px 35px;
-    border:none;
-    border-radius:10px;
-    font-size:18px;
-    margin:10px;
-    cursor:pointer;
-    transition:0.3s;
+
+.nav-links a:hover {
+  color: #ffffff;
 }
 
-.report-btn{
-    background:#e53935;
-    color:white;
+
+.nav-links a:hover::after {
+  width: 100%;
 }
 
-.volunteer-btn{
-    background:#0B3D91;
-    color:white;
+
+/* =========================================
+   HERO
+   ========================================= */
+
+.hero {
+  min-height: 650px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 80px 7%;
+
+  background:
+    radial-gradient(
+      circle at 80% 40%,
+      rgba(11, 61, 145, 0.35),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 20% 75%,
+      rgba(229, 57, 53, 0.10),
+      transparent 35%
+    ),
+    #10131a;
+
+  overflow: hidden;
 }
 
-.hero-buttons button:hover{
-    transform:translateY(-3px);
+
+/* Hero content */
+
+.hero-content {
+  width: 100%;
+  max-width: 950px;
+
+  text-align: center;
+
+  animation: heroAppear 0.8s ease;
+}
+
+
+/* Main title */
+
+.hero h1 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: clamp(55px, 8vw, 90px);
+
+  font-weight: 800;
+
+  letter-spacing: -3px;
+}
+
+
+/* Subtitle */
+
+.hero h2 {
+  margin: 15px 0 25px;
+
+  color: #ff4d4d;
+
+  font-size: clamp(25px, 4vw, 38px);
+
+  line-height: 1.2;
+
+  font-weight: 700;
+}
+
+
+/* Description */
+
+.hero p {
+  max-width: 760px;
+
+  margin: 0 auto;
+
+  color: #c5ccd7;
+
+  font-size: 18px;
+
+  line-height: 1.8;
+}
+
+
+/* =========================================
+   HERO BUTTONS
+   ========================================= */
+
+.hero-buttons {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  gap: 18px;
+
+  margin-top: 38px;
+}
+
+
+.hero-buttons button {
+  padding: 15px 30px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  font-size: 16px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: all 0.3s ease;
+}
+
+
+/* Report Emergency */
+
+.report-btn {
+  background: #e53935;
+
+  color: white;
+
+  box-shadow:
+    0 8px 25px rgba(229, 57, 53, 0.25);
+}
+
+
+.report-btn:hover {
+  background: #ff4d4d;
+
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 12px 30px rgba(229, 57, 53, 0.45);
+}
+
+
+/* Volunteer */
+
+.volunteer-btn {
+  background: #0b3d91;
+
+  color: white;
+
+  box-shadow:
+    0 8px 25px rgba(11, 61, 145, 0.3);
+}
+
+
+.volunteer-btn:hover {
+  background: #1559c7;
+
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 12px 30px rgba(21, 89, 199, 0.45);
+}
+
+
+/* =========================================
+   HERO ICONS
+   ========================================= */
+
+.hero-icons {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  gap: 30px;
+
+  margin-top: 50px;
+}
+
+
+.hero-icons span {
+  display: inline-block;
+
+  font-size: 32px;
+
+  opacity: 0.75;
+
+  transition: all 0.3s ease;
+}
+
+
+.hero-icons span:hover {
+  opacity: 1;
+
+  transform: translateY(-8px) scale(1.15);
+}
+
+
+/* =========================================
+   HERO ANIMATION
+   ========================================= */
+
+@keyframes heroAppear {
+
+  from {
+    opacity: 0;
+
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0);
+  }
+
+}
+
+
+/* =========================================
+   TABLET
+   ========================================= */
+
+@media (max-width: 900px) {
+
+  .navbar {
+    padding: 18px 30px;
+  }
+
+  .nav-links {
+    gap: 18px;
+  }
+
+  .nav-links a {
+    font-size: 15px;
+  }
+
+  .hero {
+    padding: 70px 30px;
+  }
+
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 650px) {
+
+  /* Navbar */
+
+  .navbar {
+    flex-direction: column;
+
+    gap: 15px;
+
+    padding: 16px 20px;
+  }
+
+  .logo {
+    font-size: 25px;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+
+    justify-content: center;
+
+    gap: 12px 18px;
+  }
+
+  .nav-links a {
+    font-size: 14px;
+  }
+
+
+  /* Hero */
+
+  .hero {
+    min-height: auto;
+
+    padding: 70px 20px;
+  }
+
+  .hero h1 {
+    font-size: 58px;
+
+    letter-spacing: -2px;
+  }
+
+  .hero h2 {
+    font-size: 25px;
+
+    margin-top: 12px;
+  }
+
+  .hero p {
+    font-size: 16px;
+
+    line-height: 1.7;
+  }
+
+
+  /* Buttons */
+
+  .hero-buttons {
+    flex-direction: column;
+
+    gap: 12px;
+
+    margin-top: 30px;
+  }
+
+  .hero-buttons button {
+    width: 270px;
+  }
+
+
+  /* Icons */
+
+  .hero-icons {
+    gap: 18px;
+
+    margin-top: 40px;
+  }
+
+  .hero-icons span {
+    font-size: 27px;
+  }
+
+}
+/* =========================================================
+   LOGIN & REGISTER NAVBAR BUTTONS
+   ========================================================= */
+
+.nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 20px;
+}
+
+
+/* LOGIN BOX */
+
+.login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 9px 17px;
+
+  background: #101722;
+  color: #ffffff;
+
+  border: 1px solid #1677ff;
+  border-radius: 8px;
+
+  text-decoration: none;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  transition: all 0.3s ease;
+}
+
+
+.login-btn:hover {
+  background: #0d3b7a;
+
+  border-color: #3290ff;
+
+  box-shadow:
+    0 0 15px rgba(22, 119, 255, 0.35);
+
+  transform: translateY(-2px);
+}
+
+
+/* REGISTER BOX */
+
+.register-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 9px 17px;
+
+  background: linear-gradient(
+    135deg,
+    #d62828,
+    #ff3b3b
+  );
+
+  color: #ffffff;
+
+  border: 1px solid #ff3b3b;
+  border-radius: 8px;
+
+  text-decoration: none;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  transition: all 0.3s ease;
+}
+
+
+.register-btn:hover {
+  background: linear-gradient(
+    135deg,
+    #ff3030,
+    #ff5555
+  );
+
+  box-shadow:
+    0 0 18px rgba(255, 48, 48, 0.4);
+
+  transform: translateY(-2px);
 }

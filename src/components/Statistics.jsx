@@ -4,31 +4,45 @@ function Statistics() {
   return (
     <section className="statistics">
 
-      <h2>Trusted by Communities</h2>
-      <p>
-        Building a safer future through community collaboration.
-      </p>
+      <div className="statistics-header">
+        <h2>
+          ResQHub <span>IMPACT</span>
+        </h2>
 
-      <div className="stats-container">
+        <p>
+          Building stronger communities through fast and reliable emergency response.
+        </p>
+      </div>
 
-        <div className="stat-card">
-          <h1>400+</h1>
-          <h3>Volunteers</h3>
+      <div className="statistics-container">
+
+        {/* Emergency Reports */}
+        <div className="stat-card red">
+          <div className="stat-icon">🚨</div>
+
+          <h3>250+</h3>
+
+          <p>Emergencies Reported</p>
         </div>
 
+
+        {/* Volunteers */}
         <div className="stat-card">
-          <h1>1000+</h1>
-          <h3>Emergencies Reported</h3>
+          <div className="stat-icon">🤝</div>
+
+          <h3>500+</h3>
+
+          <p>Active Volunteers</p>
         </div>
 
-        <div className="stat-card">
-          <h1>20+</h1>
-          <h3>Partner NGOs</h3>
-        </div>
 
+        {/* Emergency Support */}
         <div className="stat-card">
-          <h1>24/7</h1>
-          <h3>Emergency Support</h3>
+          <div className="stat-icon">🕐</div>
+
+          <h3>24/7</h3>
+
+          <p>Emergency Support</p>
         </div>
 
       </div>
