@@ -58,6 +58,19 @@ const emergencyRequestSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    acceptedAt: {
+      type: Date,
+      default: null,
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
+    pointsAwarded: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true, // Automatically manages createdAt and updatedAt

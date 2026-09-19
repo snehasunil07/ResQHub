@@ -37,7 +37,7 @@ router.get(
 router.put(
   "/:id/accept",
   protect,
-  authorize("volunteer", "admin"),
+  authorize("volunteer"),
   acceptRequest
 );
 

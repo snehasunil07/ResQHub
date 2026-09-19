@@ -50,6 +50,11 @@ function Navbar() {
               About
             </Link>
           </li>
+          <li>
+            <Link to="/leaderboard" onClick={closeMenu} className={isActive("/leaderboard") ? "active-link" : ""}>
+              Leaderboard
+            </Link>
+          </li>
 
           {/* Dynamic role-based navigation */}
           {user?.role === "admin" && (

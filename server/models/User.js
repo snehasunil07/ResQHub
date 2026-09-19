@@ -62,6 +62,21 @@ const userSchema = new mongoose.Schema(
       },
       default: [],
     },
+    points: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    acceptedRequestsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    completedRequestsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true, // Automatically manages createdAt and updatedAt

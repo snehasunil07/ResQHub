@@ -7,6 +7,7 @@ import connectDB from "./config/db.js";
 import healthRoutes from "./routes/healthRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import requestRoutes from "./routes/requestRoutes.js";
+import volunteerRoutes from "./routes/volunteerRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
 // Load environment variables
@@ -62,6 +63,7 @@ app.get("/", (req, res) => {
 app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/requests", requestRoutes);
+app.use("/api/volunteers", volunteerRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

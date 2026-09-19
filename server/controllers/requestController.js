@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import EmergencyRequest from "../models/EmergencyRequest.js";
+import User from "../models/User.js";
+import { calculateMatch } from "../utils/smartMatcher.js";
 
 const VALID_CATEGORIES = ["Blood", "Food", "Medicine", "Transport", "Rescue"];
 const VALID_URGENCIES = ["Low", "Medium", "High", "Critical"];
@@ -373,16 +375,44 @@ export const deleteRequest = async (req, res, next) => {
  */
 export const getAvailableRequests = async (req, res, next) => {
   try {
-    const requests = await EmergencyRequest.find({
+    const rawRequests = await EmergencyRequest.find({
       status: { $in: ["Pending", "Verified"] },
     })
       .populate("createdBy", "name email phone role")
       .sort({ createdAt: -1 });
 
+    const volunteerInterests =
+      req.user && req.user.role === "volunteer" && Array.isArray(req.user.interests)
+        ? req.user.interests
+        : [];
+
+    // Calculate smart matching for each request based on volunteer's areas of interest
+    const requests = rawRequests.map((doc) => {
+      const plain = doc.toObject();
+      const match = calculateMatch(plain, volunteerInterests);
+      return {
+        ...plain,
+        matchScore: match.score,
+        isRecommended: match.isRecommended,
+        matchedInterests: match.matchedInterests,
+        matchReason: match.reason,
+      };
+    });
+
+    // Partition into Recommended (sorted by match score descending) and Other
+    const recommended = requests
+      .filter((r) => r.isRecommended)
+      .sort((a, b) => b.matchScore - a.matchScore);
+
+    const other = requests.filter((r) => !r.isRecommended);
+
     return res.status(200).json({
       success: true,
       count: requests.length,
       requests,
+      recommended,
+      other,
+      volunteerInterests,
     });
   } catch (error) {
     next(error);
@@ -432,11 +462,25 @@ export const acceptRequest = async (req, res, next) => {
       });
     }
 
+    // Role verification: Only volunteers can accept requests
+    if (req.user.role !== "volunteer") {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: Only volunteers are authorized to accept emergency requests.",
+      });
+    }
+
     // Atomic find and update to prevent race conditions between concurrent volunteers
+    const now = new Date();
     const request = await EmergencyRequest.findOneAndUpdate(
-      { _id: id, status: { $in: ["Pending", "Verified"] } },
-      { status: "Accepted", acceptedBy: req.user._id },
-      { new: true, runValidators: true }
+      { _id: id, status: { $in: ["Pending", "Verified"] }, acceptedBy: null },
+      { 
+        status: "Accepted", 
+        acceptedBy: req.user._id,
+        acceptedAt: now,
+        $inc: { pointsAwarded: 10 }
+      },
+      { returnDocument: 'after', runValidators: true }
     )
       .populate("createdBy", "name email phone role")
       .populate("acceptedBy", "name email phone role");
@@ -451,10 +495,10 @@ export const acceptRequest = async (req, res, next) => {
         });
       }
 
-      if (existing.status === "Accepted") {
+      if (existing.status === "Accepted" || existing.acceptedBy) {
         return res.status(409).json({
           success: false,
-          message: "Conflict: This emergency request has already been accepted by another volunteer.",
+          message: "This emergency request has already been accepted by another volunteer.",
         });
       }
 
@@ -464,9 +508,14 @@ export const acceptRequest = async (req, res, next) => {
       });
     }
 
+    // Atomically award 10 points and increment accepted count for the volunteer
+    await User.findByIdAndUpdate(req.user._id, {
+      $inc: { points: 10, acceptedRequestsCount: 1 }
+    });
+
     return res.status(200).json({
       success: true,
-      message: "Emergency request accepted successfully.",
+      message: "Emergency request accepted successfully. +10 points awarded!",
       request,
     });
   } catch (error) {
@@ -516,15 +565,30 @@ export const completeRequest = async (req, res, next) => {
       });
     }
 
+    // Urgency bonus calculation: Critical (+10), High (+5), Medium/Low (+0)
+    const urgencyBonus = request.urgency === "Critical" ? 10 : request.urgency === "High" ? 5 : 0;
+    const completionPoints = 20 + urgencyBonus;
+
     request.status = "Completed";
+    request.completedAt = new Date();
+    request.pointsAwarded = (request.pointsAwarded || 10) + completionPoints;
     await request.save();
+
+    // Award completion points and increment completed count for the assigned volunteer
+    const volunteerId = request.acceptedBy;
+    if (volunteerId) {
+      await User.findByIdAndUpdate(volunteerId, {
+        $inc: { points: completionPoints, completedRequestsCount: 1 }
+      });
+    }
 
     await request.populate("createdBy", "name email phone role");
     await request.populate("acceptedBy", "name email phone role");
 
     return res.status(200).json({
       success: true,
-      message: "Emergency request marked as completed.",
+      message: `Emergency request marked as completed. +${completionPoints} points awarded!`,
+      pointsEarned: completionPoints,
       request,
     });
   } catch (error) {
