@@ -5,6 +5,9 @@ import mongoose from "mongoose";
  */
 let cachedConnection = null;
 
+// Disable command buffering so disconnected queries fail fast instead of hanging serverless functions
+mongoose.set("bufferCommands", false);
+
 export const connectDB = async () => {
   if (cachedConnection && mongoose.connection.readyState >= 1) {
     return cachedConnection;

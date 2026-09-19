@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
@@ -72,6 +73,31 @@ app.get("/", (req, res) => {
 
 // API Routes
 app.use("/api", healthRoutes);
+
+// Database connection assurance middleware for serverless & container environments
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState < 1) {
+    const mongoURI = process.env.MONGO_URI;
+    if (!mongoURI) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Database connection error: MONGO_URI is not configured in environment variables. Please add MONGO_URI in your deployment settings.",
+      });
+    }
+
+    try {
+      await connectDB();
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: `Database connection failed: ${err.message}`,
+      });
+    }
+  }
+  next();
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/volunteers", volunteerRoutes);
