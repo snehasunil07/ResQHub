@@ -1,5 +1,6 @@
 import User from "./User.js";
 import EmergencyRequest from "./EmergencyRequest.js";
+import PushSubscription from "./PushSubscription.js";
 
-export { User, EmergencyRequest };
-export default { User, EmergencyRequest };
+export { User, EmergencyRequest, PushSubscription };
+export default { User, EmergencyRequest, PushSubscription };

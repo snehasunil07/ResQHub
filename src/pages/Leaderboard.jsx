@@ -583,6 +583,36 @@ function Leaderboard() {
                 <div style={{ fontSize: "36px", marginBottom: "12px" }}>⏳</div>
                 <p>Loading real-time volunteer standings...</p>
               </div>
+            ) : error ? (
+              <div
+                style={{
+                  background: "rgba(229, 57, 53, 0.1)",
+                  border: "1px solid #e53935",
+                  borderRadius: "12px",
+                  padding: "45px 20px",
+                  textAlign: "center",
+                  color: "#ff8585",
+                }}
+              >
+                <div style={{ fontSize: "38px", marginBottom: "10px" }}>⚠️</div>
+                <h3 style={{ color: "#ff8585", margin: "0 0 8px" }}>Failed to Load Leaderboard</h3>
+                <p style={{ fontSize: "14px", margin: "0 0 16px", color: "#cbd5e1" }}>{error}</p>
+                <button
+                  onClick={() => fetchLeaderboard(timeframe)}
+                  style={{
+                    padding: "8px 20px",
+                    background: "#1677ff",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "13.5px",
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
             ) : leaderboardData.length === 0 ? (
               <div
                 style={{

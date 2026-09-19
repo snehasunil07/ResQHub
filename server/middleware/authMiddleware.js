@@ -48,6 +48,36 @@ export const protect = async (req, res, next) => {
 };
 
 /**
+ * Optional authentication middleware:
+ * If Bearer token is provided and valid, sets req.user.
+ * If no token or invalid token is provided, proceeds without rejecting (req.user = null).
+ */
+export const optionalProtect = async (req, res, next) => {
+  let token;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+    req.user = user || null;
+    next();
+  } catch (_err) {
+    // If token expired or invalid on public endpoint, continue as unauthenticated guest
+    req.user = null;
+    next();
+  }
+};
+
+/**
  * Middleware to restrict route access to specific roles
  * @param  {...string} roles - Allowed roles ('user', 'volunteer', 'admin')
  */

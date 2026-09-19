@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import EmergencyRequest from "../models/EmergencyRequest.js";
 import User from "../models/User.js";
 import { calculateMatch } from "../utils/smartMatcher.js";
+import { sendEmergencyPushNotifications } from "../utils/pushNotifier.js";
 
 const VALID_CATEGORIES = ["Blood", "Food", "Medicine", "Transport", "Rescue"];
 const VALID_URGENCIES = ["Low", "Medium", "High", "Critical"];
@@ -72,6 +73,12 @@ export const createRequest = async (req, res, next) => {
 
     // Populate createdBy details (excluding password)
     await request.populate("createdBy", "name email phone role");
+
+    // Asynchronously dispatch Web Push notifications to matching volunteers
+    // Push failure must NEVER prevent successful emergency request creation
+    sendEmergencyPushNotifications(request).catch((err) => {
+      console.error("[WebPush] Emergency push notification error:", err?.message || err);
+    });
 
     return res.status(201).json({
       success: true,

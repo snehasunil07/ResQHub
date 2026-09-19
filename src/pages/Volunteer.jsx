@@ -1,8 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import {
+  isPushSupported,
+  subscribeUserToPush,
+  unsubscribeUserFromPush,
+  checkSubscriptionStatus,
+  sendTestNotification,
+} from "../utils/pushManager";
 import "../styles/pages.css";
 
 const CATEGORIES = ["All", "Blood", "Food", "Medicine", "Transport", "Rescue"];
@@ -30,6 +37,136 @@ function Volunteer() {
   // Action states
   const [actionInProgress, setActionInProgress] = useState(null);
   const [selectedDetailRequest, setSelectedDetailRequest] = useState(null);
+
+  // URL Deep-linking for Notifications (?requestId=...)
+  const [searchParams] = useSearchParams();
+  const targetRequestId = searchParams.get("requestId") || searchParams.get("emergencyId");
+
+  // Web Push Notification states
+  const [pushStatus, setPushStatus] = useState({
+    supported: isPushSupported(),
+    permission: typeof Notification !== "undefined" ? Notification.permission : "default",
+    isSubscribed: false,
+    loading: false,
+  });
+  const [pushFeedback, setPushFeedback] = useState("");
+
+  // Sync push subscription status on mount
+  useEffect(() => {
+    let isMounted = true;
+    if (!isVolunteerOrAdmin || !token) return;
+
+    checkSubscriptionStatus(token)
+      .then((status) => {
+        if (isMounted) {
+          setPushStatus((prev) => ({
+            ...prev,
+            supported: status.supported,
+            permission: status.permission,
+            isSubscribed: status.isSubscribed,
+          }));
+        }
+      })
+      .catch((err) => {
+        console.error("[Volunteer] Error checking push status:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isVolunteerOrAdmin, token]);
+
+  // Handle auto-opening emergency modal if navigated with ?requestId=...
+  useEffect(() => {
+    if (!targetRequestId || !token || !isVolunteerOrAdmin) return;
+
+    // Check if the request is already in loaded list
+    const match =
+      availableRequests.find((r) => r._id === targetRequestId) ||
+      myAcceptedRequests.find((r) => r._id === targetRequestId);
+
+    if (match) {
+      setSelectedDetailRequest(match);
+      return;
+    }
+
+    // If not in current list (e.g. filtered), fetch directly from API
+    let isMounted = true;
+    fetch(`/api/requests/${targetRequestId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success && data.request) {
+          setSelectedDetailRequest(data.request);
+        }
+      })
+      .catch((err) => {
+        console.error("[Volunteer] Could not fetch request by target ID:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [targetRequestId, availableRequests, myAcceptedRequests, token, isVolunteerOrAdmin]);
+
+  // Enable Push Notifications Handler
+  const handleEnablePush = async () => {
+    setPushStatus((prev) => ({ ...prev, loading: true }));
+    setPushFeedback("");
+    try {
+      await subscribeUserToPush(token);
+      setPushStatus((prev) => ({
+        ...prev,
+        isSubscribed: true,
+        permission: "granted",
+        loading: false,
+      }));
+      setPushFeedback("✓ Emergency alerts enabled! You will receive push notifications for matching emergencies.");
+      setTimeout(() => setPushFeedback(""), 6000);
+    } catch (err) {
+      console.error("[Volunteer] Enable push error:", err);
+      setPushStatus((prev) => ({
+        ...prev,
+        loading: false,
+        permission: typeof Notification !== "undefined" ? Notification.permission : prev.permission,
+      }));
+      setPushFeedback(err.message || "Failed to enable emergency alerts.");
+      setTimeout(() => setPushFeedback(""), 8000);
+    }
+  };
+
+  // Disable Push Notifications Handler
+  const handleDisablePush = async () => {
+    setPushStatus((prev) => ({ ...prev, loading: true }));
+    setPushFeedback("");
+    try {
+      await unsubscribeUserFromPush(token);
+      setPushStatus((prev) => ({
+        ...prev,
+        isSubscribed: false,
+        loading: false,
+      }));
+      setPushFeedback("Emergency alerts have been disabled.");
+      setTimeout(() => setPushFeedback(""), 5000);
+    } catch (err) {
+      console.error("[Volunteer] Disable push error:", err);
+      setPushStatus((prev) => ({ ...prev, loading: false }));
+      setPushFeedback("Failed to disable emergency alerts.");
+    }
+  };
+
+  // Send Test Notification Handler
+  const handleTestPush = async () => {
+    setPushFeedback("Sending test alert to this device...");
+    try {
+      await sendTestNotification(token);
+      setPushFeedback("✓ Test alert sent! Check your system/browser notification tray.");
+      setTimeout(() => setPushFeedback(""), 6000);
+    } catch (err) {
+      setPushFeedback(err.message || "Failed to send test alert.");
+    }
+  };
 
   // Fetch Available (Verified) Requests
   const fetchAvailable = useCallback(async () => {
@@ -857,6 +994,164 @@ function Volunteer() {
                   ✓ {successMessage}
                 </div>
               )}
+
+              {/* Emergency Web Push Alerts Card */}
+              <div
+                style={{
+                  background: "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(22, 36, 58, 0.85))",
+                  border: pushStatus.isSubscribed
+                    ? "1px solid rgba(16, 185, 129, 0.4)"
+                    : "1px solid rgba(245, 158, 11, 0.3)",
+                  borderRadius: "12px",
+                  padding: "16px 20px",
+                  marginBottom: "24px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "14px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1, minWidth: "260px" }}>
+                  <div
+                    style={{
+                      fontSize: "24px",
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "10px",
+                      background: pushStatus.isSubscribed
+                        ? "rgba(16, 185, 129, 0.15)"
+                        : "rgba(245, 158, 11, 0.15)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {pushStatus.isSubscribed ? "🔔" : "🚨"}
+                  </div>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                      <h4 style={{ margin: 0, color: "#fff", fontSize: "15px", fontWeight: "600" }}>
+                        Emergency Alerts
+                      </h4>
+                      {pushStatus.isSubscribed ? (
+                        <span
+                          style={{
+                            background: "rgba(16, 185, 129, 0.2)",
+                            color: "#34d399",
+                            border: "1px solid #10b981",
+                            fontSize: "11px",
+                            padding: "2px 8px",
+                            borderRadius: "10px",
+                            fontWeight: "700",
+                          }}
+                        >
+                          ✓ Alerts Enabled
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            background: "rgba(148, 163, 184, 0.15)",
+                            color: "#94a3b8",
+                            border: "1px solid #475569",
+                            fontSize: "11px",
+                            padding: "2px 8px",
+                            borderRadius: "10px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          Disabled
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ margin: "4px 0 0", color: "#94a3b8", fontSize: "13px", lineHeight: "1.4" }}>
+                      {!pushStatus.supported
+                        ? "Web Push notifications are not supported by this browser."
+                        : pushStatus.permission === "denied"
+                        ? "Browser notifications are blocked. To receive instant emergency alerts, please allow notifications in your browser's site permissions."
+                        : pushStatus.isSubscribed
+                        ? "You will receive instant system notifications for emergencies matching your volunteer interests even when ResQHub is closed."
+                        : "Receive instant notifications for emergencies matching your volunteer interests, even when the browser tab is closed."}
+                    </p>
+                    {pushFeedback && (
+                      <div
+                        style={{
+                          marginTop: "6px",
+                          fontSize: "12.5px",
+                          fontWeight: "500",
+                          color: pushFeedback.includes("enabled") || pushFeedback.includes("sent") || pushFeedback.includes("✓")
+                            ? "#34d399"
+                            : "#fbbf24",
+                        }}
+                      >
+                        {pushFeedback}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                  {pushStatus.supported && pushStatus.permission !== "denied" && (
+                    <>
+                      {pushStatus.isSubscribed ? (
+                        <>
+                          <button
+                            onClick={handleTestPush}
+                            style={{
+                              padding: "7px 14px",
+                              background: "rgba(255, 255, 255, 0.08)",
+                              border: "1px solid #334155",
+                              color: "#e2e8f0",
+                              borderRadius: "6px",
+                              fontSize: "12.5px",
+                              cursor: "pointer",
+                              fontWeight: "600",
+                            }}
+                          >
+                            🔔 Test Alert
+                          </button>
+                          <button
+                            onClick={handleDisablePush}
+                            disabled={pushStatus.loading}
+                            style={{
+                              padding: "7px 14px",
+                              background: "transparent",
+                              border: "1px solid #ef4444",
+                              color: "#f87171",
+                              borderRadius: "6px",
+                              fontSize: "12.5px",
+                              cursor: pushStatus.loading ? "not-allowed" : "pointer",
+                            }}
+                          >
+                            Disable
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={handleEnablePush}
+                          disabled={pushStatus.loading}
+                          style={{
+                            padding: "8px 18px",
+                            background: "#1677ff",
+                            border: "none",
+                            color: "#fff",
+                            borderRadius: "6px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            cursor: pushStatus.loading ? "not-allowed" : "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          {pushStatus.loading ? "Enabling..." : "🚨 Enable Emergency Alerts"}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
 
               {/* Navigation Tabs */}
               <div

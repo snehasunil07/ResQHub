@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -8,6 +9,7 @@ import healthRoutes from "./routes/healthRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import requestRoutes from "./routes/requestRoutes.js";
 import volunteerRoutes from "./routes/volunteerRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
 // Load environment variables
@@ -64,6 +66,7 @@ app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/volunteers", volunteerRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Error Handling Middleware
 app.use(notFound);
