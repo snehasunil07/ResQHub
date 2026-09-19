@@ -26,6 +26,22 @@ export function generateMatchReason(matchedInterests) {
   return `Matched because you selected ${allButLast}, and ${last}.`;
 }
 
+// Precompiled regex patterns for high-performance zero-allocation matching
+const REGEX_MEDICAL = /\b(medical|doctor|hospital|patient|injury|injuries|health|clinic)\b/;
+const REGEX_FIRST_AID = /\b(first aid|wound|bleeding|burn|cpr|trauma)\b/;
+const REGEX_FIRST_AID_SUPPORT = /\b(accident|medical|injury|injuries|crash)\b/;
+const REGEX_BLOOD = /\b(blood|platelet|platelets|donor|transfusion)\b/;
+const REGEX_FIRE = /\b(fire|blaze|flame|flames|smoke|burn|arson|extinguisher)\b/;
+const REGEX_OTHER_RESCUE = /\b(missing|kidnap|lost child|lost person)\b/;
+const REGEX_MISSING = /\b(missing|lost child|lost person|kidnap|disappear|disappeared|runaway)\b/;
+const REGEX_ACCIDENT = /\b(accident|crash|collision|vehicle|wreck|hit and run|car crash)\b/;
+const REGEX_DISASTER = /\b(disaster|flood|flooding|earthquake|storm|cyclone|tsunami|landslide|hurricane|tornado)\b/;
+const REGEX_FOOD = /\b(food|ration|rations|meal|meals|grocery|hunger|starvation|drinking water|supplies)\b/;
+const REGEX_FOOD_RELIEF = /\b(disaster|flood|relief|shelter)\b/;
+const REGEX_TRANSPORT = /\b(transport|transportation|evacuate|evacuation|ambulance|vehicle|shift|bus|van)\b/;
+const REGEX_TRANSPORT_SUPPORT = /\b(accident|flood|disaster)\b/;
+const REGEX_SHELTER = /\b(shelter|accommodation|homeless|housing|temporary stay|camp)\b/;
+
 /**
  * Evaluate single interest against an emergency request
  * @param {string} interest - One of VOLUNTEER_AREAS_OF_INTEREST
@@ -40,7 +56,7 @@ function scoreInterestForRequest(interest, request, cachedCategory, cachedText) 
 
   switch (interest) {
     case "Medical Emergency": {
-      if (category === "Medicine" || text.match(/\b(medical|doctor|hospital|patient|injury|injuries|health|clinic)\b/)) {
+      if (category === "Medicine" || REGEX_MEDICAL.test(text)) {
         return 3;
       }
       if (category === "Blood") {
@@ -50,10 +66,10 @@ function scoreInterestForRequest(interest, request, cachedCategory, cachedText) 
     }
 
     case "First Aid": {
-      if (text.match(/\b(first aid|wound|bleeding|burn|cpr|trauma)\b/)) {
+      if (REGEX_FIRST_AID.test(text)) {
         return 3;
       }
-      if (category === "Medicine" || category === "Rescue" || text.match(/\b(accident|medical|injury|injuries|crash)\b/)) {
+      if (category === "Medicine" || category === "Rescue" || REGEX_FIRST_AID_SUPPORT.test(text)) {
         return 2;
       }
       if (category === "Blood") {
@@ -63,7 +79,7 @@ function scoreInterestForRequest(interest, request, cachedCategory, cachedText) 
     }
 
     case "Blood Donation": {
-      if (category === "Blood" || text.match(/\b(blood|platelet|platelets|donor|transfusion)\b/)) {
+      if (category === "Blood" || REGEX_BLOOD.test(text)) {
         return 3;
       }
       if (category === "Medicine") {
@@ -73,19 +89,19 @@ function scoreInterestForRequest(interest, request, cachedCategory, cachedText) 
     }
 
     case "Fire & Rescue": {
-      if (text.match(/\b(fire|blaze|flame|flames|smoke|burn|arson|extinguisher)\b/)) {
+      if (REGEX_FIRE.test(text)) {
         return 3;
       }
       // Rescue category where not explicitly missing person or accident
       if (category === "Rescue") {
-        const isOtherRescue = text.match(/\b(missing|kidnap|lost child|lost person)\b/);
+        const isOtherRescue = REGEX_OTHER_RESCUE.test(text);
         return isOtherRescue ? 2 : 3;
       }
       return 0;
     }
 
     case "Missing Person Search": {
-      if (text.match(/\b(missing|lost child|lost person|kidnap|disappear|disappeared|runaway)\b/)) {
+      if (REGEX_MISSING.test(text)) {
         return 3;
       }
       if (category === "Rescue") {
@@ -95,7 +111,7 @@ function scoreInterestForRequest(interest, request, cachedCategory, cachedText) 
     }
 
     case "Accident Response": {
-      if (text.match(/\b(accident|crash|collision|vehicle|wreck|hit and run|car crash)\b/)) {
+      if (REGEX_ACCIDENT.test(text)) {
         return 3;
       }
       if (category === "Transport" || category === "Rescue") {
@@ -105,7 +121,7 @@ function scoreInterestForRequest(interest, request, cachedCategory, cachedText) 
     }
 
     case "Natural Disaster Relief": {
-      if (text.match(/\b(disaster|flood|flooding|earthquake|storm|cyclone|tsunami|landslide|hurricane|tornado)\b/)) {
+      if (REGEX_DISASTER.test(text)) {
         return 3;
       }
       if (category === "Food" || category === "Transport" || category === "Rescue") {
@@ -115,30 +131,30 @@ function scoreInterestForRequest(interest, request, cachedCategory, cachedText) 
     }
 
     case "Food & Essential Supplies": {
-      if (category === "Food" || text.match(/\b(food|ration|rations|meal|meals|grocery|hunger|starvation|drinking water|supplies)\b/)) {
+      if (category === "Food" || REGEX_FOOD.test(text)) {
         return 3;
       }
-      if (text.match(/\b(disaster|flood|relief|shelter)\b/)) {
+      if (REGEX_FOOD_RELIEF.test(text)) {
         return 2;
       }
       return 0;
     }
 
     case "Transportation & Evacuation": {
-      if (category === "Transport" || text.match(/\b(transport|transportation|evacuate|evacuation|ambulance|vehicle|shift|bus|van)\b/)) {
+      if (category === "Transport" || REGEX_TRANSPORT.test(text)) {
         return 3;
       }
-      if (text.match(/\b(accident|flood|disaster)\b/) || category === "Rescue") {
+      if (REGEX_TRANSPORT_SUPPORT.test(text) || category === "Rescue") {
         return 2;
       }
       return 0;
     }
 
     case "Shelter & Accommodation": {
-      if (text.match(/\b(shelter|accommodation|homeless|housing|temporary stay|camp)\b/)) {
+      if (REGEX_SHELTER.test(text)) {
         return 3;
       }
-      if (category === "Food" || text.match(/\b(disaster|flood)\b/)) {
+      if (category === "Food" || REGEX_FOOD_RELIEF.test(text)) {
         return 2;
       }
       return 0;

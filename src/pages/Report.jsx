@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { apiUrl } from "../config/api";
 import "../styles/pages.css";
 
 function Report() {
@@ -93,7 +94,7 @@ function Report() {
         formData.append("image", imageFile);
       }
 
-      const response = await fetch("/api/requests", {
+      const response = await fetch(apiUrl("/api/requests"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

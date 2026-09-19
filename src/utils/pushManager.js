@@ -4,6 +4,7 @@
  * Handles Service Worker registration, browser notification permissions,
  * VAPID key exchange, and push subscription lifecycle.
  */
+import { apiUrl } from "../config/api";
 
 /**
  * Check if the current browser supports Web Push notifications
@@ -73,7 +74,7 @@ export async function subscribeUserToPush(token) {
   const registration = await registerServiceWorker();
 
   // 3. Fetch server's public VAPID key
-  const vapidRes = await fetch("/api/notifications/vapid-public-key", {
+  const vapidRes = await fetch(apiUrl("/api/notifications/vapid-public-key"), {
     headers: { Authorization: `Bearer ${token}` },
   });
   const vapidData = await vapidRes.json();
@@ -93,7 +94,7 @@ export async function subscribeUserToPush(token) {
 
   // 5. Save the subscription on the backend
   const subJson = subscription.toJSON();
-  const saveRes = await fetch("/api/notifications/subscribe", {
+  const saveRes = await fetch(apiUrl("/api/notifications/subscribe"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -134,7 +135,7 @@ export async function unsubscribeUserFromPush(token) {
     }
 
     if (token) {
-      await fetch("/api/notifications/subscribe", {
+      await fetch(apiUrl("/api/notifications/subscribe"), {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -181,7 +182,7 @@ export async function checkSubscriptionStatus(token) {
     // Verify with server if token is available
     let serverSubscribed = false;
     if (token) {
-      const res = await fetch("/api/notifications/status", {
+      const res = await fetch(apiUrl("/api/notifications/status"), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -209,7 +210,7 @@ export async function checkSubscriptionStatus(token) {
  * @param {string} token - Volunteer JWT Bearer token
  */
 export async function sendTestNotification(token) {
-  const res = await fetch("/api/notifications/test", {
+  const res = await fetch(apiUrl("/api/notifications/test"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

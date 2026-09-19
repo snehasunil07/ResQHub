@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { apiUrl } from "../config/api";
 import "../styles/pages.css";
 
 const CATEGORIES = ["Blood", "Food", "Medicine", "Transport", "Rescue"];
@@ -39,7 +40,7 @@ function UserDashboard() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch("/api/requests", {
+      const response = await fetch(apiUrl("/api/requests"), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -74,7 +75,7 @@ function UserDashboard() {
         return;
       }
       try {
-        const response = await fetch("/api/requests", {
+        const response = await fetch(apiUrl("/api/requests"), {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -132,7 +133,7 @@ function UserDashboard() {
     setEditError("");
 
     try {
-      const response = await fetch(`/api/requests/${editingRequest._id}`, {
+      const response = await fetch(apiUrl(`/api/requests/${editingRequest._id}`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -171,7 +172,7 @@ function UserDashboard() {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/requests/${deletingRequestId}`, {
+      const response = await fetch(apiUrl(`/api/requests/${deletingRequestId}`), {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

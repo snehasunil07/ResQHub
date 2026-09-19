@@ -17,7 +17,7 @@ export const getHealthStatus = (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: "ResQHub API is running",
+    message: "ResQHub backend is running",
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
     environment: process.env.NODE_ENV || "development",

@@ -3,7 +3,13 @@ import mongoose from "mongoose";
 /**
  * Connect to MongoDB with connection event listeners and graceful fallback
  */
+let cachedConnection = null;
+
 export const connectDB = async () => {
+  if (cachedConnection && mongoose.connection.readyState >= 1) {
+    return cachedConnection;
+  }
+
   const mongoURI = process.env.MONGO_URI;
 
   if (!mongoURI) {
@@ -30,6 +36,7 @@ export const connectDB = async () => {
     const conn = await mongoose.connect(mongoURI, {
       serverSelectionTimeoutMS: 5000, // Timeout after 5s if server is unreachable
     });
+    cachedConnection = conn;
     return conn;
   } catch (error) {
     console.error(`[MongoDB] Failed to connect to MongoDB: ${error.message}`);

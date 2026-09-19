@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { apiUrl } from "../config/api";
 import "../styles/pages.css";
 
 const STATUSES = ["All", "Pending", "Verified", "Accepted", "Completed", "Cancelled"];
@@ -40,7 +41,7 @@ function AdminDashboard() {
       setLoading(true);
       setError("");
       // Fetch emergency requests
-      const reqRes = await fetch("/api/requests", {
+      const reqRes = await fetch(apiUrl("/api/requests"), {
         headers: { Authorization: `Bearer ${token}` },
       });
       const reqData = await reqRes.json();
@@ -52,8 +53,8 @@ function AdminDashboard() {
 
       // Fetch system health & benchmark data
       const [healthRes, benchRes] = await Promise.all([
-        fetch("/api/health"),
-        fetch("/api/health/benchmark"),
+        fetch(apiUrl("/api/health")),
+        fetch(apiUrl("/api/health/benchmark")),
       ]);
       const hData = await healthRes.json();
       const bData = await benchRes.json();
@@ -74,7 +75,7 @@ function AdminDashboard() {
   const handleRefreshBenchmark = async () => {
     setBenchmarkLoading(true);
     try {
-      const res = await fetch("/api/health/benchmark");
+      const res = await fetch(apiUrl("/api/health/benchmark"));
       const data = await res.json();
       if (res.ok && data.benchmark) {
         setBenchmarkData(data.benchmark);
@@ -95,9 +96,9 @@ function AdminDashboard() {
       }
       try {
         const [reqRes, healthRes, benchRes] = await Promise.all([
-          fetch("/api/requests", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("/api/health"),
-          fetch("/api/health/benchmark"),
+          fetch(apiUrl("/api/requests"), { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(apiUrl("/api/health")),
+          fetch(apiUrl("/api/health/benchmark")),
         ]);
         const reqData = await reqRes.json();
         const hData = await healthRes.json();
@@ -138,7 +139,7 @@ function AdminDashboard() {
     setActionInProgress(requestId);
     setError("");
     try {
-      const res = await fetch(`/api/requests/${requestId}`, {
+      const res = await fetch(apiUrl(`/api/requests/${requestId}`), {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -174,7 +175,7 @@ function AdminDashboard() {
     setActionInProgress(deletingRequestId);
     setError("");
     try {
-      const res = await fetch(`/api/requests/${deletingRequestId}`, {
+      const res = await fetch(apiUrl(`/api/requests/${deletingRequestId}`), {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

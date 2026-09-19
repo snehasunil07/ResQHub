@@ -381,9 +381,58 @@ export const deleteRequest = async (req, res, next) => {
  * @access  Private (Volunteers & Admins)
  */
 export const getAvailableRequests = async (req, res, next) => {
+  const startTime = process.hrtime.bigint();
   try {
-    // High-performance query leveraging compound index { status: 1, createdAt: -1 }
-    // .lean() eliminates Mongoose document hydration and deep-copy overhead
+    const isBenchmarkUnoptimized = req.query.unoptimized === "true";
+    const volunteerInterests =
+      req.user && req.user.role === "volunteer" && Array.isArray(req.user.interests)
+        ? req.user.interests
+        : [];
+
+    if (isBenchmarkUnoptimized) {
+      // ORIGINAL UNOPTIMIZED IMPLEMENTATION (for benchmark comparison):
+      // Suffers from Mongoose document hydration, .toObject() deep-cloning, and multi-pass filtering
+      const rawRequests = await EmergencyRequest.find({
+        status: { $in: ["Pending", "Verified"] },
+      })
+        .populate("createdBy", "name email phone role")
+        .sort({ createdAt: -1 });
+
+      const requests = rawRequests.map((doc) => {
+        const plain = doc.toObject();
+        const match = calculateMatch(plain, volunteerInterests);
+        return {
+          ...plain,
+          matchScore: match.score,
+          isRecommended: match.isRecommended,
+          matchedInterests: match.matchedInterests,
+          matchReason: match.reason,
+        };
+      });
+
+      const recommended = requests
+        .filter((r) => r.isRecommended)
+        .sort((a, b) => b.matchScore - a.matchScore);
+
+      const other = requests.filter((r) => !r.isRecommended);
+
+      const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+      res.setHeader("X-Response-Time-Ms", durationMs.toFixed(2));
+
+      return res.status(200).json({
+        success: true,
+        count: requests.length,
+        requests,
+        recommended,
+        other,
+        volunteerInterests,
+      });
+    }
+
+    // HIGH-PERFORMANCE OPTIMIZED IMPLEMENTATION (Production Default):
+    // 1. Leverages compound index { status: 1, createdAt: -1 }
+    // 2. .lean() eliminates Mongoose document hydration and deep-copy overhead
+    // 3. Single-pass smart matching and partitioning
     const requests = await EmergencyRequest.find({
       status: { $in: ["Pending", "Verified"] },
     })
@@ -391,15 +440,9 @@ export const getAvailableRequests = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    const volunteerInterests =
-      req.user && req.user.role === "volunteer" && Array.isArray(req.user.interests)
-        ? req.user.interests
-        : [];
-
     const recommended = [];
     const other = [];
 
-    // Single-pass smart matching and partitioning
     for (let i = 0; i < requests.length; i++) {
       const plain = requests[i];
       const match = calculateMatch(plain, volunteerInterests);
@@ -417,6 +460,9 @@ export const getAvailableRequests = async (req, res, next) => {
 
     // Sort recommended requests by match score descending
     recommended.sort((a, b) => b.matchScore - a.matchScore);
+
+    const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+    res.setHeader("X-Response-Time-Ms", durationMs.toFixed(2));
 
     return res.status(200).json({
       success: true,

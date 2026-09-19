@@ -4,287 +4,147 @@ import { performance } from "perf_hooks";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import EmergencyRequest from "../models/EmergencyRequest.js";
-import { calculateMatch } from "../utils/smartMatcher.js";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure MongoDB connection
-const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/resqhub";
-await mongoose.connect(MONGO_URI);
+const PORT = process.env.PORT || 5000;
+const API_BASE = `http://localhost:${PORT}`;
+const ENDPOINT_PATH = "/api/requests/available";
+const FULL_API_URL = `${API_BASE}${ENDPOINT_PATH}`;
 
 console.log("=================================================================");
 console.log("    RESQHUB SYSTEM PERFORMANCE BENCHMARK - BUILDATHON CHALLENGE  ");
 console.log("=================================================================\n");
 
-// 1. Identify dataset and test volunteer
+// Step 1: Connect to MongoDB using application configuration
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/resqhub";
+console.log(`[Database] Connecting to MongoDB: ${MONGO_URI}`);
+await mongoose.connect(MONGO_URI);
+console.log("[Database] Connected successfully to MongoDB.\n");
+
+// Step 2: Ensure the Express API service is running on port 5000
+async function ensureApiService() {
+  console.log(`[API Pre-flight] Checking health at ${API_BASE}/api/health...`);
+  try {
+    const res = await fetch(`${API_BASE}/api/health`);
+    if (res.ok) {
+      const data = await res.json();
+      console.log(`✓ API service is reachable (${res.status} OK): "${data.message}"`);
+      return;
+    }
+  } catch (_e) {
+    // Service not running externally; dynamically start Express app in-process
+  }
+
+  console.log(`[API Pre-flight] Server not detected on port ${PORT}. Starting ResQHub Express backend...`);
+  await import("../server.js");
+  
+  // Wait up to 5 seconds for HTTP listener to be ready
+  for (let attempt = 1; attempt <= 10; attempt++) {
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      const res = await fetch(`${API_BASE}/api/health`);
+      if (res.ok) {
+        console.log(`✓ API service successfully started and reachable on port ${PORT}.\n`);
+        return;
+      }
+    } catch (_err) {
+      // Keep waiting
+    }
+  }
+
+  throw new Error(`Failed to establish connection to API service on ${API_BASE}.`);
+}
+
+await ensureApiService();
+
+// Step 3: Verify dataset and authenticated volunteer session
 const totalRequests = await EmergencyRequest.countDocuments();
 const pendingVerified = await EmergencyRequest.countDocuments({ status: { $in: ["Pending", "Verified"] } });
 
-console.log(`[Dataset] Total Emergency Requests in DB: ${totalRequests}`);
+console.log(`[Dataset] Total Emergency Requests in MongoDB: ${totalRequests}`);
 console.log(`[Dataset] Available (Pending/Verified) Incidents: ${pendingVerified}`);
 
 if (totalRequests === 0) {
-  console.error("Error: Database has 0 emergency requests. Please ensure data is loaded.");
+  console.error("Error: Database has 0 emergency requests. Please run seed or ensure database is populated.");
   process.exit(1);
 }
 
-// Find a representative volunteer
+// Find or select a real volunteer responder for testing
 let volunteer = await User.findOne({ role: "volunteer" });
 if (!volunteer) {
   volunteer = await User.findOne();
 }
 
-const volunteerInterests = [
-  "Medical Emergency",
-  "Blood Donation",
-  "First Aid",
-  "Food & Essential Supplies",
-];
+// Generate valid JWT token for authenticated volunteer dispatch request
+const JWT_SECRET = process.env.JWT_SECRET || "resqhub_dev_secret_key_2026_super_secure";
+const authToken = jwt.sign({ id: volunteer._id }, JWT_SECRET, { expiresIn: "2h" });
 
-console.log(`[Test Input] Volunteer: "${volunteer.name}" (${volunteer.email})`);
-console.log(`[Test Input] Active Areas of Interest: ${JSON.stringify(volunteerInterests)}\n`);
+console.log(`[Auth] Authenticated as volunteer responder: "${volunteer.name}" (${volunteer.email})`);
+console.log(`[Auth] Registered Areas of Interest: ${JSON.stringify(volunteer.interests || [])}`);
+console.log(`[Benchmark Target] Full HTTP Endpoint: ${FULL_API_URL}\n`);
 
-// ----------------------------------------------------------------------
-// ORIGINAL (BEFORE) IMPLEMENTATION
-// ----------------------------------------------------------------------
-async function runOriginalOperation() {
-  const rawRequests = await EmergencyRequest.find({
-    status: { $in: ["Pending", "Verified"] },
-  })
-    .populate("createdBy", "name email phone role")
-    .sort({ createdAt: -1 });
-
-  const requests = rawRequests.map((doc) => {
-    const plain = doc.toObject();
-    const match = calculateMatch(plain, volunteerInterests);
-    return {
-      ...plain,
-      matchScore: match.score,
-      isRecommended: match.isRecommended,
-      matchedInterests: match.matchedInterests,
-      matchReason: match.reason,
-    };
+// Helper to make authenticated HTTP GET requests
+async function makeApiCall(isUnoptimized = false, parseBody = false) {
+  const url = isUnoptimized ? `${FULL_API_URL}?unoptimized=true` : FULL_API_URL;
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      "Content-Type": "application/json",
+    },
   });
 
-  const recommended = requests
-    .filter((r) => r.isRecommended)
-    .sort((a, b) => b.matchScore - a.matchScore);
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`API returned HTTP ${res.status}: ${errorText}`);
+  }
 
-  const other = requests.filter((r) => !r.isRecommended);
+  const serverTime = parseFloat(res.headers.get("X-Response-Time-Ms")) || null;
+  const data = parseBody ? await res.json() : await res.arrayBuffer();
 
-  return {
-    success: true,
-    count: requests.length,
-    requests,
-    recommended,
-    other,
-    volunteerInterests,
-  };
+  return { data, serverTime };
 }
 
 // ----------------------------------------------------------------------
-// OPTIMIZED (AFTER) IMPLEMENTATION
-// ----------------------------------------------------------------------
-// Optimized calculateMatch (computes lowercased text string once per request)
-function optimizedCalculateMatch(request, interests = []) {
-  if (!request || !Array.isArray(interests) || interests.length === 0) {
-    return { score: 0, isRecommended: false, matchedInterests: [], reason: null };
-  }
-
-  const category = (request.category || "").trim();
-  const text = `${request.title || ""} ${request.description || ""}`.toLowerCase();
-
-  const matched = [];
-  let totalScore = 0;
-
-  for (let i = 0; i < interests.length; i++) {
-    const interest = interests[i];
-    let points = 0;
-
-    switch (interest) {
-      case "Medical Emergency": {
-        if (category === "Medicine" || text.match(/\b(medical|doctor|hospital|patient|injury|injuries|health|clinic)\b/)) {
-          points = 3;
-        } else if (category === "Blood") {
-          points = 2;
-        }
-        break;
-      }
-      case "First Aid": {
-        if (text.match(/\b(first aid|wound|bleeding|burn|cpr|trauma)\b/)) {
-          points = 3;
-        } else if (category === "Medicine" || category === "Rescue" || text.match(/\b(accident|medical|injury|injuries|crash)\b/)) {
-          points = 2;
-        } else if (category === "Blood") {
-          points = 1;
-        }
-        break;
-      }
-      case "Blood Donation": {
-        if (category === "Blood" || text.match(/\b(blood|platelet|platelets|donor|transfusion)\b/)) {
-          points = 3;
-        } else if (category === "Medicine") {
-          points = 2;
-        }
-        break;
-      }
-      case "Fire & Rescue": {
-        if (text.match(/\b(fire|blaze|flame|flames|smoke|burn|arson|extinguisher)\b/)) {
-          points = 3;
-        } else if (category === "Rescue") {
-          points = text.match(/\b(missing|kidnap|lost child|lost person)\b/) ? 2 : 3;
-        }
-        break;
-      }
-      case "Missing Person Search": {
-        if (text.match(/\b(missing|lost child|lost person|kidnap|disappear|disappeared|runaway)\b/)) {
-          points = 3;
-        } else if (category === "Rescue") {
-          points = 2;
-        }
-        break;
-      }
-      case "Accident Response": {
-        if (text.match(/\b(accident|crash|collision|vehicle|wreck|hit and run|car crash)\b/)) {
-          points = 3;
-        } else if (category === "Transport" || category === "Rescue") {
-          points = 2;
-        }
-        break;
-      }
-      case "Natural Disaster Relief": {
-        if (text.match(/\b(disaster|flood|flooding|earthquake|storm|cyclone|tsunami|landslide|hurricane|tornado)\b/)) {
-          points = 3;
-        } else if (category === "Food" || category === "Transport" || category === "Rescue") {
-          points = 2;
-        }
-        break;
-      }
-      case "Food & Essential Supplies": {
-        if (category === "Food" || text.match(/\b(food|ration|rations|meal|meals|grocery|hunger|starvation|drinking water|supplies)\b/)) {
-          points = 3;
-        } else if (text.match(/\b(disaster|flood|relief|shelter)\b/)) {
-          points = 2;
-        }
-        break;
-      }
-      case "Transportation & Evacuation": {
-        if (category === "Transport" || text.match(/\b(transport|transportation|evacuate|evacuation|ambulance|vehicle|shift|bus|van)\b/)) {
-          points = 3;
-        } else if (text.match(/\b(accident|flood|disaster)\b/) || category === "Rescue") {
-          points = 2;
-        }
-        break;
-      }
-      case "Shelter & Accommodation": {
-        if (text.match(/\b(shelter|accommodation|homeless|housing|temporary stay|camp)\b/)) {
-          points = 3;
-        } else if (category === "Food" || text.match(/\b(disaster|flood)\b/)) {
-          points = 2;
-        }
-        break;
-      }
-      case "Other": {
-        points = 1;
-        break;
-      }
-      default:
-        points = 0;
-    }
-
-    if (points > 0) {
-      matched.push({ interest, points });
-      totalScore += points;
-    }
-  }
-
-  matched.sort((a, b) => b.points - a.points);
-  const matchedInterests = matched.map((m) => m.interest);
-
-  let reason = null;
-  if (matchedInterests.length === 1) {
-    reason = `Matched because you selected ${matchedInterests[0]}.`;
-  } else if (matchedInterests.length === 2) {
-    reason = `Matched because you selected ${matchedInterests[0]} and ${matchedInterests[1]}.`;
-  } else if (matchedInterests.length > 2) {
-    const allButLast = matchedInterests.slice(0, -1).join(", ");
-    const last = matchedInterests[matchedInterests.length - 1];
-    reason = `Matched because you selected ${allButLast}, and ${last}.`;
-  }
-
-  return {
-    score: totalScore,
-    isRecommended: totalScore > 0,
-    matchedInterests,
-    reason,
-  };
-}
-
-async function runOptimizedOperation() {
-  const requests = await EmergencyRequest.find({
-    status: { $in: ["Pending", "Verified"] },
-  })
-    .populate("createdBy", "name email phone role")
-    .sort({ createdAt: -1 })
-    .lean();
-
-  const recommended = [];
-  const other = [];
-
-  for (let i = 0; i < requests.length; i++) {
-    const req = requests[i];
-    const match = optimizedCalculateMatch(req, volunteerInterests);
-    req.matchScore = match.score;
-    req.isRecommended = match.isRecommended;
-    req.matchedInterests = match.matchedInterests;
-    req.matchReason = match.reason;
-
-    if (match.isRecommended) {
-      recommended.push(req);
-    } else {
-      other.push(req);
-    }
-  }
-
-  recommended.sort((a, b) => b.matchScore - a.matchScore);
-
-  return {
-    success: true,
-    count: requests.length,
-    requests,
-    recommended,
-    other,
-    volunteerInterests,
-  };
-}
-
-// ----------------------------------------------------------------------
-// EXECUTION: BEFORE MEASUREMENT
+// PHASE 1: BENCHMARKING BEFORE OPTIMIZATION (HTTP API CALLS)
 // ----------------------------------------------------------------------
 console.log("-----------------------------------------------------------------");
-console.log("PHASE 1: BENCHMARKING BEFORE OPTIMIZATION");
+console.log("PHASE 1: BENCHMARKING BEFORE OPTIMIZATION (Original HTTP Endpoint)");
 console.log("-----------------------------------------------------------------");
 
-// Warm-up runs (3 runs)
-console.log("Running 3 warm-up runs...");
+// Drop compound index to reflect baseline unoptimized state
+try {
+  await EmergencyRequest.collection.dropIndex("status_1_createdAt_-1");
+  console.log("Baseline state: Dropped compound index { status: 1, createdAt: -1 }.");
+} catch (_e) {
+  // Index didn't exist, already in baseline state
+}
+
+console.log("Running 3 warm-up HTTP requests to eliminate cold-start variances...");
 for (let i = 0; i < 3; i++) {
-  await runOriginalOperation();
+  await makeApiCall(true);
+  await new Promise((r) => setTimeout(r, 40));
 }
 
 console.log("Collecting 20 high-resolution measurements (performance.now())...");
 const beforeRuns = [];
+const beforeServerRuns = [];
 for (let i = 1; i <= 20; i++) {
   const t0 = performance.now();
-  await runOriginalOperation();
+  const { serverTime } = await makeApiCall(true);
   const t1 = performance.now();
   const elapsed = Number((t1 - t0).toFixed(2));
   beforeRuns.push(elapsed);
-  console.log(`  Run ${String(i).padStart(2, " ")}: ${elapsed.toFixed(2)} ms`);
+  if (serverTime !== null) beforeServerRuns.push(serverTime);
+  console.log(`  Run ${String(i).padStart(2, " ")}: ${elapsed.toFixed(2)} ms${serverTime ? ` (server execution: ${serverTime.toFixed(2)} ms)` : ""}`);
+  await new Promise((r) => setTimeout(r, 40));
 }
 
 const beforeAvg = Number((beforeRuns.reduce((a, b) => a + b, 0) / beforeRuns.length).toFixed(2));
@@ -292,26 +152,32 @@ const beforeMin = Math.min(...beforeRuns);
 const beforeMax = Math.max(...beforeRuns);
 const sortedB = [...beforeRuns].sort((a, b) => a - b);
 const beforeMedian = Number(((sortedB[9] + sortedB[10]) / 2).toFixed(2));
+const beforeServerAvg = beforeServerRuns.length ? Number((beforeServerRuns.reduce((a, b) => a + b, 0) / beforeServerRuns.length).toFixed(2)) : null;
 
-console.log(`\n>> BEFORE Average: ${beforeAvg.toFixed(2)} ms | Min: ${beforeMin.toFixed(2)} ms | Max: ${beforeMax.toFixed(2)} ms | Median: ${beforeMedian.toFixed(2)} ms\n`);
+console.log(`\n>> BEFORE Average: ${beforeAvg.toFixed(2)} ms | Min: ${beforeMin.toFixed(2)} ms | Max: ${beforeMax.toFixed(2)} ms | Median: ${beforeMedian.toFixed(2)} ms`);
+if (beforeServerAvg) {
+  console.log(`   (Server execution avg: ${beforeServerAvg.toFixed(2)} ms)`);
+}
+console.log("");
 
 // ----------------------------------------------------------------------
-// APPLY DATABASE OPTIMIZATION (Compound Index)
+// APPLY OPTIMIZATION: Create compound index & switch to .lean() path
 // ----------------------------------------------------------------------
 console.log("-----------------------------------------------------------------");
-console.log("APPLYING OPTIMIZATION: Creating compound index { status: 1, createdAt: -1 }");
+console.log("APPLYING OPTIMIZATION: Compound index + .lean() + single-pass parsing");
 console.log("-----------------------------------------------------------------");
 await EmergencyRequest.collection.createIndex({ status: 1, createdAt: -1 });
-console.log("✓ Compound index created on emergencyrequests collection.\n");
+console.log("✓ Compound index { status: 1, createdAt: -1 } created on MongoDB collection.");
+console.log("✓ Controller switches to high-speed .lean() and single-pass Smart Match.\n");
 
 // ----------------------------------------------------------------------
-// VERIFY EQUIVALENCE
+// PHASE 2: VERIFY EQUIVALENCE
 // ----------------------------------------------------------------------
 console.log("-----------------------------------------------------------------");
-console.log("PHASE 2: VERIFYING OUTPUT EQUIVALENCE");
+console.log("PHASE 2: VERIFYING HTTP RESPONSE EQUIVALENCE");
 console.log("-----------------------------------------------------------------");
-const sampleBefore = await runOriginalOperation();
-const sampleAfter = await runOptimizedOperation();
+const { data: sampleBefore } = await makeApiCall(true, true);
+const { data: sampleAfter } = await makeApiCall(false, true);
 
 const countMatch = sampleBefore.count === sampleAfter.count;
 const recCountMatch = sampleBefore.recommended.length === sampleAfter.recommended.length;
@@ -345,27 +211,30 @@ if (!countMatch || !recCountMatch || !orderingAndScoresMatch) {
 }
 
 // ----------------------------------------------------------------------
-// EXECUTION: AFTER MEASUREMENT
+// PHASE 3: BENCHMARKING AFTER OPTIMIZATION (HTTP API CALLS)
 // ----------------------------------------------------------------------
 console.log("\n-----------------------------------------------------------------");
-console.log("PHASE 3: BENCHMARKING AFTER OPTIMIZATION");
+console.log("PHASE 3: BENCHMARKING AFTER OPTIMIZATION (Optimized HTTP Endpoint)");
 console.log("-----------------------------------------------------------------");
 
-// Warm-up runs (exact same 3 runs)
-console.log("Running 3 warm-up runs...");
+console.log("Running 3 warm-up HTTP requests...");
 for (let i = 0; i < 3; i++) {
-  await runOptimizedOperation();
+  await makeApiCall(false);
+  await new Promise((r) => setTimeout(r, 40));
 }
 
 console.log("Collecting 20 high-resolution measurements (performance.now())...");
 const afterRuns = [];
+const afterServerRuns = [];
 for (let i = 1; i <= 20; i++) {
   const t0 = performance.now();
-  await runOptimizedOperation();
+  const { serverTime } = await makeApiCall(false);
   const t1 = performance.now();
   const elapsed = Number((t1 - t0).toFixed(2));
   afterRuns.push(elapsed);
-  console.log(`  Run ${String(i).padStart(2, " ")}: ${elapsed.toFixed(2)} ms`);
+  if (serverTime !== null) afterServerRuns.push(serverTime);
+  console.log(`  Run ${String(i).padStart(2, " ")}: ${elapsed.toFixed(2)} ms${serverTime ? ` (server execution: ${serverTime.toFixed(2)} ms)` : ""}`);
+  await new Promise((r) => setTimeout(r, 40));
 }
 
 const afterAvg = Number((afterRuns.reduce((a, b) => a + b, 0) / afterRuns.length).toFixed(2));
@@ -373,15 +242,19 @@ const afterMin = Math.min(...afterRuns);
 const afterMax = Math.max(...afterRuns);
 const sortedA = [...afterRuns].sort((a, b) => a - b);
 const afterMedian = Number(((sortedA[9] + sortedA[10]) / 2).toFixed(2));
+const afterServerAvg = afterServerRuns.length ? Number((afterServerRuns.reduce((a, b) => a + b, 0) / afterServerRuns.length).toFixed(2)) : null;
 
-console.log(`\n>> AFTER Average: ${afterAvg.toFixed(2)} ms | Min: ${afterMin.toFixed(2)} ms | Max: ${afterMax.toFixed(2)} ms | Median: ${afterMedian.toFixed(2)} ms\n`);
+console.log(`\n>> AFTER Average: ${afterAvg.toFixed(2)} ms | Min: ${afterMin.toFixed(2)} ms | Max: ${afterMax.toFixed(2)} ms | Median: ${afterMedian.toFixed(2)} ms`);
+if (afterServerAvg) {
+  console.log(`   (Server execution avg: ${afterServerAvg.toFixed(2)} ms)`);
+}
+console.log("");
 
 // ----------------------------------------------------------------------
 // CALCULATE IMPROVEMENT
 // ----------------------------------------------------------------------
 const improvementPercent = Number((((beforeAvg - afterAvg) / beforeAvg) * 100).toFixed(2));
 
-// Bar visualizations
 const maxBarLen = 30;
 const beforeBarLen = maxBarLen;
 const afterBarLen = Math.max(2, Math.round((afterAvg / beforeAvg) * maxBarLen));
@@ -392,6 +265,7 @@ console.log("=================================================================")
 console.log("                     BENCHMARK COMPARISON SUMMARY                 ");
 console.log("=================================================================");
 console.log(`Operation:       Volunteer Dashboard Available Requests Loading & Smart Matching`);
+console.log(`HTTP Endpoint:   GET ${FULL_API_URL}`);
 console.log(`Dataset:         ${pendingVerified} active emergency incidents (out of ${totalRequests} total)`);
 console.log(`Iterations:      20 runs (with 3 warm-up runs)`);
 console.log(`BEFORE Average:  ${beforeAvg.toFixed(2)} ms`);
@@ -405,17 +279,20 @@ console.log("=================================================================\n
 // Save structured JSON results for UI demo and documentation
 const resultsData = {
   operation: "Volunteer Dashboard Available Emergency Requests Loading & Smart Matching",
+  endpoint: `GET ${ENDPOINT_PATH}`,
+  fullUrl: FULL_API_URL,
   timestamp: new Date().toISOString(),
   dataset: {
     totalRequests,
     pendingVerified,
-    volunteerInterests,
+    volunteerInterests: volunteer.interests || [],
   },
   iterations: 20,
   warmupRuns: 3,
   before: {
     runs: beforeRuns,
     average: beforeAvg,
+    serverAverage: beforeServerAvg,
     min: beforeMin,
     max: beforeMax,
     median: beforeMedian,
@@ -423,6 +300,7 @@ const resultsData = {
   after: {
     runs: afterRuns,
     average: afterAvg,
+    serverAverage: afterServerAvg,
     min: afterMin,
     max: afterMax,
     median: afterMedian,
@@ -444,3 +322,4 @@ fs.writeFileSync(resultsPath, JSON.stringify(resultsData, null, 2), "utf8");
 console.log(`[Results] Benchmark results saved to ${resultsPath}`);
 
 await mongoose.disconnect();
+process.exit(0);

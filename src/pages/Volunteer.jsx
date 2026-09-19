@@ -10,6 +10,7 @@ import {
   checkSubscriptionStatus,
   sendTestNotification,
 } from "../utils/pushManager";
+import { apiUrl } from "../config/api";
 import "../styles/pages.css";
 
 const CATEGORIES = ["All", "Blood", "Food", "Medicine", "Transport", "Rescue"];
@@ -92,7 +93,7 @@ function Volunteer() {
 
     // If not in current list (e.g. filtered), fetch directly from API
     let isMounted = true;
-    fetch(`/api/requests/${targetRequestId}`, {
+    fetch(apiUrl(`/api/requests/${targetRequestId}`), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -173,7 +174,7 @@ function Volunteer() {
     if (!token || !isVolunteerOrAdmin) return;
     try {
       setError("");
-      const res = await fetch("/api/requests/available", {
+      const res = await fetch(apiUrl("/api/requests/available"), {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -197,7 +198,7 @@ function Volunteer() {
   const fetchMyAccepted = useCallback(async () => {
     if (!token || !isVolunteerOrAdmin) return;
     try {
-      const res = await fetch("/api/requests/my-accepted", {
+      const res = await fetch(apiUrl("/api/requests/my-accepted"), {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -223,8 +224,8 @@ function Volunteer() {
       try {
         if (isMounted) setLoading(true);
         const [availRes, acceptedRes] = await Promise.all([
-          fetch("/api/requests/available", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("/api/requests/my-accepted", { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(apiUrl("/api/requests/available"), { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(apiUrl("/api/requests/my-accepted"), { headers: { Authorization: `Bearer ${token}` } }),
         ]);
         const availData = await availRes.json();
         const acceptedData = await acceptedRes.json();
@@ -261,7 +262,7 @@ function Volunteer() {
     setActionInProgress(requestId);
     setError("");
     try {
-      const res = await fetch(`/api/requests/${requestId}/accept`, {
+      const res = await fetch(apiUrl(`/api/requests/${requestId}/accept`), {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -300,7 +301,7 @@ function Volunteer() {
     setActionInProgress(requestId);
     setError("");
     try {
-      const res = await fetch(`/api/requests/${requestId}/complete`, {
+      const res = await fetch(apiUrl(`/api/requests/${requestId}/complete`), {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -333,7 +334,7 @@ function Volunteer() {
     setActionInProgress(requestId);
     setError("");
     try {
-      const res = await fetch(`/api/requests/${requestId}/cancel`, {
+      const res = await fetch(apiUrl(`/api/requests/${requestId}/cancel`), {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,

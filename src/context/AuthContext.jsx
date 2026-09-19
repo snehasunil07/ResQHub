@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { apiUrl } from "../config/api";
 
 const AuthContext = createContext(null);
 
@@ -9,12 +10,12 @@ const parseJsonResponse = async (response) => {
     if (!response.ok) {
       if (response.status === 404) {
         throw new Error(
-          "API service is unreachable (404). Please ensure the backend server is running on port 5000."
+          "API service is unreachable (404). Please ensure the backend server is running and accessible."
         );
       }
       if (response.status >= 500) {
         throw new Error(
-          "Backend server gateway error. Please verify the Express backend is running on port 5000."
+          "Backend server gateway error. Please verify the Express backend service status."
         );
       }
       throw new Error(`Unexpected response (${response.status}). Please try again.`);
@@ -46,7 +47,7 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const response = await fetch("/api/auth/me", {
+        const response = await fetch(apiUrl("/api/auth/me"), {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },
@@ -82,7 +83,7 @@ export function AuthProvider({ children }) {
   const register = async ({ name, email, phone, password, role = "user", interests = [] }) => {
     setError(null);
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch(apiUrl("/api/auth/register"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -117,7 +118,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     setError(null);
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -150,7 +151,7 @@ export function AuthProvider({ children }) {
   // Forgot password
   const forgotPassword = async (email) => {
     try {
-      const response = await fetch("/api/auth/forgot-password", {
+      const response = await fetch(apiUrl("/api/auth/forgot-password"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

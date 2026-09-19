@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { apiUrl } from "../config/api";
 import "../styles/pages.css";
 
 function Leaderboard() {
@@ -26,9 +27,18 @@ function Leaderboard() {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      const res = await fetch(`/api/volunteers/leaderboard?timeframe=${selectedTimeframe}`, {
+      const targetUrl = apiUrl(`/api/volunteers/leaderboard?timeframe=${selectedTimeframe}`);
+      const res = await fetch(targetUrl, {
         headers,
       });
+
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(
+          `Backend API is currently unreachable or starting up (${res.status}). If using a separate backend, please ensure VITE_API_URL is configured in your deployment settings.`
+        );
+      }
+
       const data = await res.json();
 
       if (!res.ok || !data.success) {
@@ -42,7 +52,7 @@ function Leaderboard() {
       setRecentAchievements(data.recentAchievements || []);
     } catch (err) {
       console.error("[Leaderboard] Fetch error:", err);
-      setError("Network error: Could not load leaderboard.");
+      setError(err.message || "Network error: Could not load leaderboard.");
     } finally {
       setLoading(false);
     }

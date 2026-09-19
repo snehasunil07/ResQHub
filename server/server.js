@@ -22,19 +22,28 @@ const app = express();
 
 // Middleware: CORS
 const allowedOrigins = [
-  process.env.CLIENT_URL || "http://localhost:5173",
+  process.env.CLIENT_URL,
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-];
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (such as mobile apps or curl/Postman)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+
+      // Check explicit allowed list or any .vercel.app domain
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app") ||
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1");
+
+      if (isAllowed) {
         return callback(null, true);
       }
-      return callback(null, true); // Permissive in development
+      return callback(null, true); // Permissive fallback
     },
     credentials: true,
   })
@@ -75,20 +84,26 @@ app.use(errorHandler);
 // Connect to MongoDB
 connectDB();
 
-// Start Server
+// Start Server (only when running standalone, avoiding duplicate listeners in serverless environments)
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(
-    `[Server] ResQHub backend running in ${process.env.NODE_ENV || "development"} mode on http://localhost:${PORT}`
-  );
-});
+let server = null;
+
+if (!process.env.VERCEL) {
+  server = app.listen(PORT, () => {
+    console.log(
+      `[Server] ResQHub backend running in ${process.env.NODE_ENV || "development"} mode on http://localhost:${PORT}`
+    );
+  });
+}
 
 // Graceful Shutdown
 process.on("SIGTERM", () => {
-  console.log("[Server] SIGTERM received. Closing HTTP server gracefully...");
-  server.close(() => {
-    console.log("[Server] HTTP server closed.");
-  });
+  if (server) {
+    console.log("[Server] SIGTERM received. Closing HTTP server gracefully...");
+    server.close(() => {
+      console.log("[Server] HTTP server closed.");
+    });
+  }
 });
 
 export default app;
