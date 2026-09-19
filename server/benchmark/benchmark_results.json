@@ -1,0 +1,82 @@
+{
+  "operation": "Volunteer Dashboard Available Emergency Requests Loading & Smart Matching",
+  "timestamp": "2026-09-19T08:17:50.341Z",
+  "dataset": {
+    "totalRequests": 2507,
+    "pendingVerified": 1252,
+    "volunteerInterests": [
+      "Medical Emergency",
+      "Blood Donation",
+      "First Aid",
+      "Food & Essential Supplies"
+    ]
+  },
+  "iterations": 20,
+  "warmupRuns": 3,
+  "before": {
+    "runs": [
+      47.18,
+      46.28,
+      42.48,
+      38.33,
+      41.19,
+      47.42,
+      51.24,
+      42.31,
+      54.23,
+      43.3,
+      49.49,
+      40.7,
+      45.12,
+      39.83,
+      41.35,
+      40.37,
+      44.17,
+      37.27,
+      39.47,
+      39.6
+    ],
+    "average": 43.57,
+    "min": 37.27,
+    "max": 54.23,
+    "median": 42.39
+  },
+  "after": {
+    "runs": [
+      23.95,
+      25.29,
+      20.98,
+      20.16,
+      23.32,
+      19.17,
+      23.74,
+      21.4,
+      20.31,
+      24.56,
+      19.18,
+      21.19,
+      21.33,
+      27.69,
+      20.48,
+      19.57,
+      23.9,
+      20.95,
+      20.89,
+      20.83
+    ],
+    "average": 21.94,
+    "min": 19.17,
+    "max": 27.69,
+    "median": 21.09
+  },
+  "improvement": {
+    "deltaMs": 21.63,
+    "percent": 49.64
+  },
+  "verification": {
+    "countMatch": true,
+    "recCountMatch": true,
+    "otherCountMatch": true,
+    "orderingAndScoresMatch": true
+  }
+}

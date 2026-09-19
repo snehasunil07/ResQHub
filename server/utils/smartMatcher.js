@@ -30,11 +30,13 @@ export function generateMatchReason(matchedInterests) {
  * Evaluate single interest against an emergency request
  * @param {string} interest - One of VOLUNTEER_AREAS_OF_INTEREST
  * @param {object} request - Emergency request object
+ * @param {string} [cachedCategory] - Pre-extracted category string
+ * @param {string} [cachedText] - Pre-lowercased title and description string
  * @returns {number} Points (3: Exact/Primary, 2: Related Support, 1: Secondary, 0: None)
  */
-function scoreInterestForRequest(interest, request) {
-  const category = (request.category || "").trim();
-  const text = `${request.title || ""} ${request.description || ""}`.toLowerCase();
+function scoreInterestForRequest(interest, request, cachedCategory, cachedText) {
+  const category = cachedCategory !== undefined ? cachedCategory : (request.category || "").trim();
+  const text = cachedText !== undefined ? cachedText : `${request.title || ""} ${request.description || ""}`.toLowerCase();
 
   switch (interest) {
     case "Medical Emergency": {
@@ -170,8 +172,13 @@ export function calculateMatch(request, volunteerInterests = []) {
   const matched = [];
   let totalScore = 0;
 
-  for (const interest of volunteerInterests) {
-    const points = scoreInterestForRequest(interest, request);
+  // Pre-calculate lowercased search text and category ONCE per request
+  const category = (request.category || "").trim();
+  const text = `${request.title || ""} ${request.description || ""}`.toLowerCase();
+
+  for (let i = 0; i < volunteerInterests.length; i++) {
+    const interest = volunteerInterests[i];
+    const points = scoreInterestForRequest(interest, request, category, text);
     if (points > 0) {
       matched.push({ interest, points });
       totalScore += points;

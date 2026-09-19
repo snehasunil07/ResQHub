@@ -12,7 +12,8 @@
     "server:dev": "node --watch server/server.js",
     "seed": "node server/utils/seedAdmin.js",
     "seed:admin": "node server/utils/seedAdmin.js",
-    "seed:demo": "node server/utils/seedAdmin.js"
+    "seed:demo": "node server/utils/seedAdmin.js",
+    "benchmark": "node server/benchmark/run_benchmark.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

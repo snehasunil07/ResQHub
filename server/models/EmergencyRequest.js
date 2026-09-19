@@ -77,6 +77,10 @@ const emergencyRequestSchema = new mongoose.Schema(
   }
 );
 
+// Compound index for high-performance volunteer mission dispatch queries (avoids COLLSCAN & in-memory sort)
+emergencyRequestSchema.index({ status: 1, createdAt: -1 });
+emergencyRequestSchema.index({ acceptedBy: 1, status: 1 });
+
 const EmergencyRequest = mongoose.model(
   "EmergencyRequest",
   emergencyRequestSchema

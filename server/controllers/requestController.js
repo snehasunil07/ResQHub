@@ -382,36 +382,41 @@ export const deleteRequest = async (req, res, next) => {
  */
 export const getAvailableRequests = async (req, res, next) => {
   try {
-    const rawRequests = await EmergencyRequest.find({
+    // High-performance query leveraging compound index { status: 1, createdAt: -1 }
+    // .lean() eliminates Mongoose document hydration and deep-copy overhead
+    const requests = await EmergencyRequest.find({
       status: { $in: ["Pending", "Verified"] },
     })
       .populate("createdBy", "name email phone role")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     const volunteerInterests =
       req.user && req.user.role === "volunteer" && Array.isArray(req.user.interests)
         ? req.user.interests
         : [];
 
-    // Calculate smart matching for each request based on volunteer's areas of interest
-    const requests = rawRequests.map((doc) => {
-      const plain = doc.toObject();
+    const recommended = [];
+    const other = [];
+
+    // Single-pass smart matching and partitioning
+    for (let i = 0; i < requests.length; i++) {
+      const plain = requests[i];
       const match = calculateMatch(plain, volunteerInterests);
-      return {
-        ...plain,
-        matchScore: match.score,
-        isRecommended: match.isRecommended,
-        matchedInterests: match.matchedInterests,
-        matchReason: match.reason,
-      };
-    });
+      plain.matchScore = match.score;
+      plain.isRecommended = match.isRecommended;
+      plain.matchedInterests = match.matchedInterests;
+      plain.matchReason = match.reason;
 
-    // Partition into Recommended (sorted by match score descending) and Other
-    const recommended = requests
-      .filter((r) => r.isRecommended)
-      .sort((a, b) => b.matchScore - a.matchScore);
+      if (match.isRecommended) {
+        recommended.push(plain);
+      } else {
+        other.push(plain);
+      }
+    }
 
-    const other = requests.filter((r) => !r.isRecommended);
+    // Sort recommended requests by match score descending
+    recommended.sort((a, b) => b.matchScore - a.matchScore);
 
     return res.status(200).json({
       success: true,
