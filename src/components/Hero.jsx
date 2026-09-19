@@ -1,4 +1,5 @@
 import "../styles/Home.css";
+import { Link } from "react-router-dom";
 
 function Hero() {
   return (
@@ -16,13 +17,13 @@ function Hero() {
         </p>
 
         <div className="hero-buttons">
-          <button className="report-btn">
+          <Link to="/report" className="report-btn" style={{ textDecoration: "none" }}>
             🚨 Report Emergency
-          </button>
+          </Link>
 
-          <button className="volunteer-btn">
+          <Link to="/volunteer" className="volunteer-btn" style={{ textDecoration: "none" }}>
             🤝 Become a Volunteer
-          </button>
+          </Link>
         </div>
 
         <div className="hero-icons">

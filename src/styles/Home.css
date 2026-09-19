@@ -36,93 +36,116 @@ body {
   align-items: center;
   justify-content: space-between;
 
-  padding: 30px 70px;
+  padding: 16px clamp(16px, 4vw, 40px);
 
-  background: rgba(42, 85, 160, 0.96);
+  background: rgba(11, 20, 36, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 
-  border-bottom: 1px solid #263247;
-
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid #1e2c40;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-
 /* Logo */
-
 .logo {
   display: flex;
   align-items: center;
-
   color: white;
-
-  font-size: 40px;
+  font-size: clamp(24px, 3vw, 30px);
   font-weight: 800;
-
   cursor: pointer;
+  letter-spacing: -0.02em;
 }
 
 .logo span {
   margin-left: 8px;
-
   color: white;
 }
 
+.nav-collapse {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  margin-left: 30px;
+}
 
 /* Navigation */
-
 .nav-links {
   display: flex;
   align-items: center;
-
   gap: 20px;
-
   margin: 0;
   padding: 0;
-
   list-style: none;
 }
 
-
 .nav-links a {
   position: relative;
-
-  color: #d7dce5;
-
-  font-size: 18px;
-  font-weight: 600;
-
+  color: #cbd5e1;
+  font-size: 15px;
+  font-weight: 500;
   text-decoration: none;
-
-  transition: 0.3s ease;
+  padding: 6px 2px;
+  transition: 0.25s ease;
 }
 
-
-/* Hover underline */
-
-.nav-links a::after {
-  content: "";
-
-  position: absolute;
-
-  left: 0;
-  bottom: -7px;
-
-  width: 0;
-  height: 2px;
-
-  background: #e53935;
-
-  transition: width 0.3s ease;
-}
-
-
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-links a.active-link {
   color: #ffffff;
 }
 
-
-.nav-links a:hover::after {
+.nav-links a.active-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
   width: 100%;
+  height: 2px;
+  background: #e53935;
+  box-shadow: 0 0 8px rgba(229, 57, 53, 0.6);
 }
+
+@media (max-width: 900px) {
+  .mobile-nav-toggle {
+    display: block !important;
+  }
+
+  .nav-collapse {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #0d1524;
+    border-bottom: 1px solid #22344d;
+    padding: 24px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    margin-left: 0;
+  }
+
+  .nav-collapse.open {
+    display: flex;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .nav-buttons {
+    margin-left: 0 !important;
+    width: 100%;
+    padding-top: 10px;
+    border-top: 1px solid #1a273a;
+  }
+}
+
 
 
 /* =========================================
